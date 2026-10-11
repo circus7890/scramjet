@@ -28,6 +28,13 @@ export const demoSettingsStore = createStore(
 	}
 );
 
+const legacyWispUrls = (import.meta.env.VITE_LEGACY_WISP_URLS ?? "")
+	.split(",")
+	.filter(Boolean);
+if (legacyWispUrls.includes(demoSettingsStore.wispUrl)) {
+	demoSettingsStore.wispUrl = DEFAULT_WISP_URL;
+}
+
 export function normalizeWispUrl(value: string) {
 	const trimmed = value.trim();
 	if (!trimmed) {

@@ -30,9 +30,22 @@ const version = packagejson.version;
 
 const DEMO_PORT = process.env.DEMO_PORT || 4141;
 const WISP_PORT = process.env.WISP_PORT || 4142;
+const codespaceName = process.env.CODESPACE_NAME;
+const forwardingDomain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
+
+process.env.VITE_LEGACY_WISP_URLS = [
+	`ws://localhost:${WISP_PORT}/`,
+	codespaceName && forwardingDomain
+		? `wss://${codespaceName}-${WISP_PORT}.${forwardingDomain}/`
+		: "",
+]
+	.filter(Boolean)
+	.join(",");
 
 if (process.env.VITE_WISP_URL) {
 	process.env.VITE_WISP_URL = normalizeWebsocketUrl(process.env.VITE_WISP_URL);
+} else if (codespaceName && forwardingDomain) {
+	process.env.VITE_WISP_URL = `wss://${codespaceName}-${DEMO_PORT}.${forwardingDomain}/wisp/`;
 } else {
 	process.env.VITE_WISP_URL = `ws://localhost:${WISP_PORT}/`;
 }
@@ -56,6 +69,13 @@ const server = await createServer({
 	server: {
 		port: Number(DEMO_PORT),
 		strictPort: true,
+		proxy: {
+			"/wisp": {
+				target: `ws://127.0.0.1:${WISP_PORT}`,
+				ws: true,
+				rewrite: (path) => path.replace(/^\/wisp/, ""),
+			},
+		},
 	},
 });
 
